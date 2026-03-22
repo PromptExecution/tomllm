@@ -1,0 +1,7 @@
+/target/
+/dist/
+/pkg/
+/pkg-nodejs/
+**/*.rs.bk
+.env
+Cargo.lock

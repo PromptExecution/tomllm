@@ -1,0 +1,18 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "tomllm"
+requires-python = ">=3.9"
+description = "TOML + LLM comment conventions: tribal knowledge in #comments, stripped for data pipelines"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries",
+]
+
+[tool.maturin]
+features = ["python"]
+module-name = "tomllm"

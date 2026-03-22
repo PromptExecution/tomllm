@@ -1,0 +1,17 @@
+{
+  "name": "@promptexecution/tomllm",
+  "version": "0.1.0",
+  "description": "TOML + LLM comment conventions: tribal knowledge in #comments, stripped for data pipelines",
+  "main": "pkg/tomllm.js",
+  "types": "pkg/tomllm.d.ts",
+  "files": ["pkg/"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PromptExecution/tomllm"
+  },
+  "scripts": {
+    "build": "wasm-pack build --target bundler --features wasm",
+    "build:nodejs": "wasm-pack build --target nodejs --features wasm"
+  }
+}
