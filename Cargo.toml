@@ -2,10 +2,11 @@
 name = "tomllm"
 version = "0.1.0"
 edition = "2024"
-description = "TOML + LLM comment conventions: tribal knowledge in #comments, stripped for data pipelines"
+description = "Structured TOML annotations for AI-augmented applications — annotate config for LLMs, strip for pipelines"
 license = "MIT"
 repository = "https://github.com/PromptExecution/tomllm"
-keywords = ["toml", "llm", "agent", "config", "annotations"]
+documentation = "https://docs.rs/tomllm"
+keywords = ["toml", "llm", "ai", "config", "annotations"]
 categories = ["parsing", "config", "text-processing"]
 readme = "README.md"
 

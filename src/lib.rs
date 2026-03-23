@@ -1,33 +1,25 @@
 //! # tomllm
 //!
-//! TOML + LLM comment conventions.
+//! Structured TOML annotations for AI-augmented applications.
 //!
-//! `.tomllm` files are **valid TOML** with enriched `#` comment semantics:
-//! - Comments associate with the next key-value pair or section header
-//! - Special prefixes encode tribal knowledge: `# 🤓`, `# @tribal:`, `# @example:`, `# @requires:`
-//! - Tail-map block (last ≤10 lines): fast executive agent scanning without full context load
-//!
-//! ## Design principle
-//! Comments are FOR agents reading the **source file** as documentation.
-//! When passing data VALUES downstream (to pipelines or further LLMs), strip comments
-//! to minimize token usage. The recipient gets clean TOML; the source stays rich.
-//!
-//! ## Cognitive tier
-//! Each `.tomllm` file MAY declare its required cognitive tier in the tail-map:
-//! - `sm0l` — any small model can process this (classify, route, format)
-//! - `ch0nky` — requires code-generation capable model (implement, refactor)
-//! - `frontier` — requires frontier reasoning (architecture, security, compliance)
+//! `.tomllm` files are **valid TOML** extended with structured `#` comment conventions:
+//! - Annotation prefixes (`@example:`, `@requires:`, `@deprecated:`, `@note:`, `@tribal:`)
+//!   associate machine-readable metadata with the next key-value pair
+//! - A tail-map block at the end of any file enables fast metadata extraction without
+//!   parsing the full document
+//! - `strip_for_pipeline()` removes all annotation comments, yielding clean TOML/JSON
+//!   for downstream consumers
 //!
 //! ## Example
 //! ```toml
-//! # @tribal: always use uv pip, never pip install directly
 //! # @example: uv pip install requests
+//! # @requires: Python 3.9+
 //! package_manager = "uv"
 //!
-//! # b00t:map v1
-//! # summary: Python toolchain config
-//! # tags: python, uv
-//! # tier: sm0l
+//! # tomllm:map v1
+//! # summary: Python toolchain configuration
+//! # tags: python, packaging
+//! # complexity: 2
 //! ```
 
 use thiserror::Error;

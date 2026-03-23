@@ -4,14 +4,29 @@ build-backend = "maturin"
 
 [project]
 name = "tomllm"
+version = "0.1.0"
 requires-python = ">=3.9"
-description = "TOML + LLM comment conventions: tribal knowledge in #comments, stripped for data pipelines"
+description = "Structured TOML annotations for AI-augmented applications"
 license = { text = "MIT" }
+readme = "README.md"
+keywords = ["toml", "llm", "ai", "config", "annotations", "agents"]
 classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Rust",
-    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries",
+    "Topic :: Text Processing :: Markup",
 ]
+
+[project.urls]
+Repository = "https://github.com/PromptExecution/tomllm"
+Issues = "https://github.com/PromptExecution/tomllm/issues"
 
 [tool.maturin]
 features = ["python"]

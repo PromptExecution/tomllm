@@ -1,75 +1,65 @@
 # tomllm
 
-TOML + LLM comment conventions: tribal knowledge in `#comments`, stripped for data pipelines.
+**Structured TOML annotations for AI-augmented applications.**
 
-## Overview
+`tomllm` extends standard TOML with a lightweight comment convention that lets configuration files carry machine-readable documentation alongside their values. Annotation comments survive in source for human and LLM readers; a single call strips them for clean downstream serialization.
 
-`.tomllm` files are **valid TOML** with enriched `#` comment semantics:
+---
 
-- Comments associate with the next key-value pair or section header
-- Special prefixes encode tribal knowledge: `# 🤓`, `# @tribal:`, `# @example:`, `# @requires:`
-- Tail-map block (last ≤10 lines): fast executive agent scanning without full context load
-- Comments are FOR agents reading the **source file** as documentation — strip them for downstream pipelines
+## The problem
 
-## Cognitive Tiers
+Configuration files written for LLM agents face a tension: agents need rich context (what does this key mean? what are valid values? what are the gotchas?) but downstream data pipelines need clean, minimal payloads. Embedding that context in comments today means either shipping noisy config to your pipeline or maintaining a separate documentation layer that drifts.
 
-Each `.tomllm` file MAY declare its required cognitive tier in the tail-map:
+## What tomllm does
 
-| Tier | Models | Tasks |
-|------|--------|-------|
-| `sm0l` | qwen2.5-3B, haiku | classify, route, grep, format |
-| `ch0nky` | qwen3-coder (local) | implement, refactor, debug |
-| `frontier` | claude-opus/sonnet | architecture, security, novel design |
+A `.tomllm` file is a **valid TOML file** — any TOML parser reads it normally. `tomllm` adds:
 
-## Example
+**1. Annotation comments** — special prefixes associate structured metadata with the next key:
 
 ```toml
-# @tribal: always use uv pip, never pip install directly
 # @example: uv pip install requests
+# @requires: Python 3.9+, uv installed
+# @deprecated: use poetry instead
 package_manager = "uv"
 
-# b00t:map v1
-# summary: Python toolchain config
-# tags: python, uv
-# tier: sm0l
-# complexity: 2
+# @example: DATABASE_URL=postgres://localhost/mydb
+database_url = "postgres://prod-host/mydb"
 ```
 
-## Usage
-
-### Rust
+**2. Stripping** — one call removes all annotation comments, yielding clean TOML or JSON for pipelines:
 
 ```rust
-use tomllm::TomllmDoc;
-
-let doc = TomllmDoc::parse(input)?;
-let clean_json = doc.strip_for_pipeline(); // stripped TOML as JSON
-let tier = doc.cognitive_tier();           // sm0l / ch0nky / frontier
-let map = doc.map_block;                   // Option<MapBlock>
+let doc = TomllmDoc::parse(raw_config)?;
+let clean = doc.strip_for_pipeline(); // annotation-free JSON
 ```
 
-### Python (maturin)
+**3. Tail-map** — a structured metadata block at the end of any file enables fast scanning without full parsing:
 
-```python
-from tomllm import TomllmDoc, MapBlock
-
-doc = TomllmDoc.parse(text)
-print(doc.cognitive_tier())   # "sm0l"
-print(doc.strip_for_pipeline())  # JSON string
-
-block = MapBlock.from_text(text)
-if block:
-    print(block.summary, block.tier, block.tags)
+```toml
+# tomllm:map v1
+# summary: Database connection config for production
+# tags: database, postgres, production
+# tier: ops
+# complexity: 3
 ```
 
-### TypeScript / WASM
+Agents can extract the tail-map in microseconds to route, prioritize, or skip files without deserializing their full contents.
 
-```typescript
-import init, { TomllmDoc } from '@promptexecution/tomllm';
+---
 
-await init();
-const doc = TomllmDoc.parse(text);
-```
+## Annotation prefixes
+
+| Prefix | Meaning |
+|--------|---------|
+| `# @example:` | Concrete usage example for this key |
+| `# @requires:` | Prerequisites or dependencies |
+| `# @deprecated:` | Deprecation notice with replacement |
+| `# @note:` | Non-obvious behavior or constraint |
+| `# @tribal:` | Institutional knowledge that isn't in the docs |
+
+All annotation lines are stripped by `strip_for_pipeline()`. Plain comments (no prefix) are preserved.
+
+---
 
 ## Install
 
@@ -80,29 +70,97 @@ cargo add tomllm
 # Python
 pip install tomllm
 
-# npm
+# npm / TypeScript
 npm install @promptexecution/tomllm
 ```
 
+---
+
+## Usage
+
+### Rust
+
+```rust
+use tomllm::{TomllmDoc, MapBlock};
+
+let input = r#"
+# @example: uv pip install requests
+package_manager = "uv"
+
+# tomllm:map v1
+# summary: Python toolchain config
+# tags: python, packaging
+# complexity: 2
+"#;
+
+let doc = TomllmDoc::parse(input)?;
+
+// Strip annotations → clean JSON for pipelines
+let json = doc.strip_for_pipeline();
+
+// Extract tail-map metadata
+if let Some(map) = &doc.map_block {
+    println!("{} | tags: {:?}", map.summary, map.tags);
+}
+
+// Pull all annotations out as structured data
+let annotations = doc.annotations();
+```
+
+### Python
+
+```python
+from tomllm import TomllmDoc, MapBlock
+
+doc = TomllmDoc.parse(text)
+
+# Clean TOML/JSON for downstream
+clean = doc.strip_for_pipeline()
+
+# Tail-map metadata
+block = MapBlock.from_text(text)
+if block:
+    print(block.summary)   # "Python toolchain config"
+    print(block.tags)      # ["python", "packaging"]
+    print(block.complexity) # 2
+```
+
+### TypeScript / WASM
+
+```typescript
+import init, { TomllmDoc } from '@promptexecution/tomllm';
+
+await init();
+
+const doc = TomllmDoc.parse(text);
+const clean = doc.strip_for_pipeline();
+const mapBlock = doc.map_block();
+```
+
+---
+
 ## Tail-map format
 
+The tail-map is an optional block at the end of any `.tomllm` file (or any TOML file) that provides fast metadata extraction:
+
 ```toml
-# b00t:map v1
-# summary: one-line human+LLM description
+# tomllm:map v1
+# summary: one-line description for humans and agents
 # tags: comma, separated, keywords
-# tier: sm0l|ch0nky|frontier
-# cmds: b00t hive activate inference-qwen3, b00t hive status
+# tier: sm0l | standard | advanced
 # complexity: 1-10
 ```
+
+The `TomllmRegistry` can scan a directory of `.tomllm` files, extract only their tail-maps, and return a sorted/filtered index — useful for capability discovery, configuration routing, or context assembly.
+
+---
+
+## Motivation
+
+This library was extracted from internal tooling at [PromptExecution](https://github.com/PromptExecution) where configuration files are read by both human engineers and LLM agents. The annotation convention emerged from a practical need: agents need context that pipelines don't, and maintaining two versions of every config file is unsustainable.
+
+---
 
 ## License
 
 MIT
-
-<!-- b00t:map v1
-summary: tomllm — TOML + LLM comment conventions crate
-tags: toml, llm, agent, config, annotations, wasm, python
-tier: sm0l
-cmds: cargo test, maturin build --features python, wasm-pack build
-complexity: 3
--->

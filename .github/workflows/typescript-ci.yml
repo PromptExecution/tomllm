@@ -3,6 +3,7 @@ name: TypeScript / WASM CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -11,38 +12,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      # wasm-pack internally passes --artifact-dir to cargo, which requires nightly
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: stable
-          override: true
-          target: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Build WASM (bundler)
-        run: wasm-pack build --target bundler --features wasm --out-dir pkg
-      - name: Build WASM (nodejs)
-        run: wasm-pack build --target nodejs --features wasm --out-dir pkg-nodejs
-      - name: Upload WASM artifacts
+      - name: Build WASM (bundler target)
+        run: wasm-pack build --target bundler --features wasm --scope promptexecution
+      - name: Upload WASM artifact
         uses: actions/upload-artifact@v4
         with:
           name: wasm-pkg
           path: pkg/
 
   publish-npm:
+    name: Publish to npm
     needs: wasm-build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
       - uses: actions/download-artifact@v4
         with:
           name: wasm-pkg
           path: pkg/
-      - name: Publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish
+        # wasm-pack generates pkg/package.json with @promptexecution/tomllm name
         run: npm publish --access public
+        working-directory: pkg/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
