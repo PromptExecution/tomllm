@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
-use crate::{Result, TomllmError};
+use crate::Result;
 use crate::map_block::MapBlock;
 use crate::stripper::{extract_comments, strip};
 
@@ -99,7 +99,7 @@ impl TomllmDoc {
 
         for (line_idx, comment_text) in &all_comments {
             // Check if this is an annotation-style comment
-            let is_annotation = ANNOTATION_PREFIXES
+            let _is_annotation = ANNOTATION_PREFIXES
                 .iter()
                 .any(|prefix| comment_text.starts_with(prefix));
 

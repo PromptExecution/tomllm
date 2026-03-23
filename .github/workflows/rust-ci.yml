@@ -3,6 +3,7 @@ name: Rust CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -11,20 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - run: cargo test --all-features
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test
+      # 🤓 wasm feature compiles to rlib on native — wasm32 target only needed for actual WASM artifact
+      - run: cargo test --features wasm
 
   publish-crate:
+    name: Publish to crates.io
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # 🤓 gate on tags (v*) — push a `git tag v0.1.0 && git push --tags` to trigger
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - run: cargo publish --token ${{ secrets.CRATESIO_API_TOKEN }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Publish
+        run: cargo publish --token ${{ secrets.CRATESIO_API_TOKEN }}

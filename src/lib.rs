@@ -30,7 +30,6 @@
 //! # tier: sm0l
 //! ```
 
-use std::collections::BTreeMap;
 use thiserror::Error;
 
 #[cfg(feature = "wasm")]
