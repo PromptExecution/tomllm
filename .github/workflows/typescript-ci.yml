@@ -19,7 +19,15 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Build WASM (bundler target)
-        run: wasm-pack build --target bundler --features wasm --scope promptexecution
+        run: wasm-pack build --target bundler --features wasm
+      - name: Set npm package name
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('pkg/package.json', 'utf8'));
+            pkg.name = '@promptexecution/tomllm';
+            fs.writeFileSync('pkg/package.json', JSON.stringify(pkg, null, 2));
+          "
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v4
         with:
